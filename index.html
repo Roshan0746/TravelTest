@@ -9,150 +9,123 @@
         :root {
             --bg-color: #0f172a;
             --card-bg: #1e293b;
-            --accent: #f97316; /* Xpulse Orange vibe */
+            --accent: #f97316; /* Xpulse Orange */
             --text: #f8fafc;
             --success: #22c55e;
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-family: -apple-system, sans-serif;
             background-color: var(--bg-color);
             color: var(--text);
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .header {
-            text-align: center;
-            border-bottom: 2px solid var(--accent);
-            padding-bottom: 10px;
+            margin: 0; padding: 20px;
+            display: flex; flex-direction: column; gap: 15px;
         }
 
         .card {
             background: var(--card-bg);
-            padding: 15px;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            padding: 15px; border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
         }
 
-        h2 { margin: 0 0 10px 0; font-size: 1.2rem; color: var(--accent); }
+        h2 { margin: 0 0 10px 0; font-size: 1.1rem; color: var(--accent); }
 
-        /* Fuel Calc Style */
-        .fuel-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            align-items: center;
+        /* Input Section */
+        .add-item-box {
+            display: flex; gap: 8px; margin-bottom: 10px;
         }
 
         input {
-            background: #334155;
-            border: 1px solid #475569;
-            color: white;
-            padding: 8px;
-            border-radius: 6px;
-            width: 80%;
+            background: #334155; border: 1px solid #475569;
+            color: white; padding: 10px; border-radius: 8px; flex: 1;
         }
 
-        /* Cart List Style */
+        .add-btn {
+            background: var(--accent); border: none; color: white;
+            padding: 10px 15px; border-radius: 8px; font-weight: bold;
+        }
+
+        /* Cart List */
         .cart-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 0;
+            display: flex; justify-content: space-between;
+            align-items: center; padding: 12px 0;
             border-bottom: 1px solid #334155;
         }
 
-        .cart-item:last-child { border: none; }
-
         .status-btn {
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            border: 2px solid var(--accent);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            width: 24px; height: 24px; border-radius: 50%;
+            border: 2px solid var(--accent); cursor: pointer;
         }
 
-        .status-btn.done {
-            background: var(--success);
-            border-color: var(--success);
-        }
+        .status-btn.done { background: var(--success); border-color: var(--success); }
+        .done-text { text-decoration: line-through; opacity: 0.5; }
 
-        .done-text {
-            text-decoration: line-through;
-            opacity: 0.5;
-        }
+        .fuel-res { font-size: 1.2rem; font-weight: bold; color: var(--success); }
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <h1>🏔️ NOMAD PLAN</h1>
-        <p id="trip-name">Pune to Kokandiva Expedition</p>
-    </div>
-
     <div class="card">
-        <h2>⛽ Fuel Estimator</h2>
-        <div class="fuel-grid">
-            <div>
-                <label>Total KM:</label><br>
-                <input type="number" id="kmInput" value="140" oninput="calculateFuel()">
-            </div>
-            <div>
-                <p>Est. Cost:<br><strong id="fuelCost" style="font-size: 1.4rem;">₹387</strong></p>
-            </div>
+        <h2>⛽ Xpulse Fuel Estimator</h2>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <input type="number" id="kmInput" placeholder="Total KM" oninput="calcFuel()">
+            <div class="fuel-res" id="fuelCost">₹0</div>
         </div>
     </div>
 
     <div class="card">
         <h2>🛒 Trip Cart</h2>
-        <div id="cartList">
-            <div class="cart-item">
-                <span>Onion (1 kg)</span>
-                <div class="status-btn" onclick="toggleItem(this)"></div>
-            </div>
-            <div class="cart-item">
-                <span>Oil (500 ml)</span>
-                <div class="status-btn" onclick="toggleItem(this)"></div>
-            </div>
-            <div class="cart-item">
-                <span>Maggi (6 Pkts)</span>
-                <div class="status-btn" onclick="toggleItem(this)"></div>
-            </div>
+        <div class="add-item-box">
+            <input type="text" id="itemName" placeholder="Item (e.g. Onion)">
+            <input type="text" id="itemQty" placeholder="Qty" style="width: 60px;">
+            <button class="add-btn" onclick="addItem()">Add</button>
         </div>
+        <div id="cartList"></div>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
-        tg.expand(); // Full screen open hoga
+        tg.expand();
 
-        function calculateFuel() {
+        let items = JSON.parse(localStorage.getItem('nomad_cart')) || [];
+
+        function calcFuel() {
             const km = document.getElementById('kmInput').value;
-            const mileage = 38; // Average mileage
-            const price = 105; // Petrol price
-            const cost = Math.round((km / mileage) * price);
-            document.getElementById('fuelCost').innerText = "₹" + cost;
+            const cost = Math.round((km / 38) * 105);
+            document.getElementById('fuelCost').innerText = "₹" + (km ? cost : 0);
         }
 
-        function toggleItem(el) {
-            el.classList.toggle('done');
-            const textElement = el.parentElement.querySelector('span');
-            textElement.classList.toggle('done-text');
-            
-            // Haptic Feedback (Mobile viberate karega)
-            if (tg.HapticFeedback) {
-                tg.HapticFeedback.impactOccurred('medium');
+        function renderCart() {
+            const list = document.getElementById('cartList');
+            list.innerHTML = '';
+            items.forEach((item, index) => {
+                list.innerHTML += `
+                    <div class="cart-item">
+                        <span class="${item.done ? 'done-text' : ''}">${item.name} (${item.qty})</span>
+                        <div class="status-btn ${item.done ? 'done' : ''}" onclick="toggleItem(${index})"></div>
+                    </div>`;
+            });
+            localStorage.setItem('nomad_cart', JSON.stringify(items));
+        }
+
+        function addItem() {
+            const name = document.getElementById('itemName').value;
+            const qty = document.getElementById('itemQty').value;
+            if (name && qty) {
+                items.push({ name, qty, done: false });
+                document.getElementById('itemName').value = '';
+                document.getElementById('itemQty').value = '';
+                renderCart();
             }
         }
 
-        // Initialize Telegram Theme
-        document.body.style.backgroundColor = tg.themeParams.bg_color || '#0f172a';
+        function toggleItem(index) {
+            items[index].done = !items[index].done;
+            if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
+            renderCart();
+        }
+
+        renderCart();
     </script>
 </body>
 </html>
